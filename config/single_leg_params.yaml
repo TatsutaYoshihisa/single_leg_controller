@@ -1,0 +1,32 @@
+# モーター設定
+dynamixel:
+  ids: [1, 2, 3]  # coxa, femur, tibia
+  device_name: "/dev/ttyUSB0"
+  baud_rate: 57600
+  protocol_version: 2.0
+
+# 制御パラメータ
+control:
+  position_limit:
+    max: 4095  # 最大位置値
+    min: 0     # 最小位置値
+  velocity_limit: 1023  # 最大速度
+  update_rate: 50  # 制御更新レート（Hz）
+
+# 脚のジオメトリ
+leg_geometry:
+  coxa_length: 25.0   # mm
+  femur_length: 105.0  # mm
+  tibia_length: 105.0 # mm
+  
+# 各関節のオフセット(0~4096:0~360度)
+joint_zero_position:
+  coxa_offset: 90.0   # 90度
+  femur_offset: 90.0  # 90度
+  tibia_offset: 0.0  # 0度
+  
+# 回転方向の設定
+joint_direction:
+  coxa_direction: 1    # 1: 時計回りが正, -1: 反時計回りが正
+  femur_direction: 1   # 1: 前方向が正,  -1: 後方向が正
+  tibia_direction: -1   # 1: 上方向が正,  -1: 下方向が正

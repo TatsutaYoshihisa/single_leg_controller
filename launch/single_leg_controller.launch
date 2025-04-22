@@ -1,0 +1,15 @@
+<launch>
+    <!-- パラメータファイルのロード -->
+    <rosparam command="load" 
+              file="$(find single_leg_controller)/config/single_leg_params.yaml" />
+
+    <!-- コントローラーノードの起動 -->
+    <node name="single_leg_controller" 
+          pkg="single_leg_controller" 
+          type="single_leg_controller_node" 
+          output="screen">
+        <!-- ノードの名前空間をパラメータファイルと合わせる -->
+        <rosparam command="load" 
+                  file="$(find single_leg_controller)/config/single_leg_params.yaml" />
+    </node>
+</launch>
