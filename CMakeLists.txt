@@ -36,12 +36,15 @@ include_directories(
 
 # 実行ファイルの生成
 add_executable(${PROJECT_NAME}_node 
-  src/single_leg_controller.cpp
-  src/dynamixel_sync_controller.cpp
+  src/ver1_single_leg_controller.cpp
+  src/ver1_dynamixel_sync_controller.cpp
 )
 
 # 依存関係の設定
-add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME}_node 
+  ${${PROJECT_NAME}_EXPORTED_TARGETS} 
+  ${catkin_EXPORTED_TARGETS}
+)
 
 # リンクの設定
 target_link_libraries(${PROJECT_NAME}_node

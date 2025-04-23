@@ -1,9 +1,0 @@
-<launch>
-  <!-- パラメータファイルのロード -->
-  <rosparam command="load" file="$(find single_leg_controller)/config/single_leg_params.yaml" />
-
-  <!-- コントローラーノードの起動 -->
-  <node name="single_leg_controller" pkg="single_leg_controller" type="single_leg_controller_node" output="screen">
-    <param name="device_name" value="/dev/ttyUSB0"/>
-  </node>
-</launch>

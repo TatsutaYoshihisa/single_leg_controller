@@ -4,7 +4,7 @@
 #include <ros/ros.h>
 #include <single_leg_controller/LegCommand.h>
 #include <single_leg_controller/LegPosition.h>
-#include "single_leg_controller/dynamixel_sync_controller.h"
+#include "single_leg_controller/ver1_dynamixel_sync_controller.h"
 #include <cmath>
 #include <vector>
 
@@ -39,9 +39,9 @@ private:
 
     // ゼロ点オフセット
     struct JointZeroPosition {
-        uint32_t coxa_offset;
-        uint32_t femur_offset;
-        uint32_t tibia_offset;
+        double coxa_offset;
+        double femur_offset;
+        double tibia_offset;
     } zero_positions_;
 
     // 回転方向設定
@@ -76,9 +76,9 @@ private:
                                   double& x, double& y, double& z);
     
     // 角度変換
-    uint32_t angleToPosition(double angle, uint32_t offset, int direction);
-    double positionToAngle(uint32_t position, uint32_t offset, int direction);
-
+    uint32_t angleToPosition(double angle, int32_t offset, int direction);
+    double positionToAngle(uint32_t position, int32_t offset, int direction);
+    int32_t degToPosition(double angle);
     // 角度の検証と正規化
     bool validateAngle(double angle);
     void normalizeAngle(double& angle);

@@ -1,5 +1,4 @@
-// src/dynamixel_sync_controller.cpp
-#include "single_leg_controller/dynamixel_sync_controller.h"
+#include "single_leg_controller/ver1_dynamixel_sync_controller.h"
 
 DynamixelSyncController::DynamixelSyncController(const std::string &port_name, int baud_rate)
     : baudRate(baud_rate), dxl_error(0) {
@@ -40,9 +39,7 @@ bool DynamixelSyncController::initialize() {
 }
 
 void DynamixelSyncController::close() {
-    if (portHandler->isOpen()) {
-        portHandler->closePort();
-    }
+    portHandler->closePort();
 }
 
 bool DynamixelSyncController::enableTorque(uint8_t id, bool enable) {
@@ -114,7 +111,7 @@ bool DynamixelSyncController::syncWritePositionVelocity(
         }
     }
 
-    // 同期書き込みの実行（まず速度、次に位置）
+    // 同期書き込みの実行
     int dxl_comm_result = syncWriteVelocity->txPacket();
     if (dxl_comm_result != COMM_SUCCESS) {
         ROS_ERROR("Failed to sync write velocities: %s", 

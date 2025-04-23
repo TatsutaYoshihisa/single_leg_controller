@@ -1,6 +1,6 @@
-#include "single_leg_controller/single_leg_controller.h"
+#include "single_leg_controller/ver1_single_leg_controller.h"
 #include <boost/make_shared.hpp>
-
+//コンストラクタ（初期化処理）
 SingleLegController::SingleLegController() : nh_("~") {
     // Dynamixelの基本設定を読み込み
     nh_.param<std::string>("dynamixel/device_name", device_name_, "/dev/ttyUSB0");
@@ -33,19 +33,20 @@ SingleLegController::SingleLegController() : nh_("~") {
     nh_.param<double>("control/update_rate", control_params_.update_rate, 50.0);
 
     // リンクパラメータの読み込み
-    nh_.param<double>("leg_geometry/coxa_length", coxa_length_, 60.0);
-    nh_.param<double>("leg_geometry/femur_length", femur_length_, 93.0);
-    nh_.param<double>("leg_geometry/tibia_length", tibia_length_, 137.0);
+    nh_.param<double>("leg_geometry/coxa_length", coxa_length_, 25.0);
+    nh_.param<double>("leg_geometry/femur_length", femur_length_, 105.0);
+    nh_.param<double>("leg_geometry/tibia_length", tibia_length_, 105.0);
 
     // ゼロ点オフセットの読み込み
-    int coxa_offset_temp, femur_offset_temp, tibia_offset_temp;
-    nh_.param("joint_zero_position/coxa_offset", coxa_offset_temp, 0);
-    nh_.param("joint_zero_position/femur_offset", femur_offset_temp, 0);
-    nh_.param("joint_zero_position/tibia_offset", tibia_offset_temp, 0);
+    double coxa_offset_temp, femur_offset_temp, tibia_offset_temp;
+    nh_.param("joint_zero_position/coxa_offset", coxa_offset_temp, 0.0);
+    nh_.param("joint_zero_position/femur_offset", femur_offset_temp, 0.0);
+    nh_.param("joint_zero_position/tibia_offset", tibia_offset_temp, 0.0);
     
-    zero_positions_.coxa_offset = static_cast<uint32_t>(coxa_offset_temp);
-    zero_positions_.femur_offset = static_cast<uint32_t>(femur_offset_temp);
-    zero_positions_.tibia_offset = static_cast<uint32_t>(tibia_offset_temp);
+    
+    zero_positions_.coxa_offset = degToPosition(coxa_offset_temp);
+    zero_positions_.femur_offset = degToPosition(femur_offset_temp);
+    zero_positions_.tibia_offset = degToPosition(tibia_offset_temp);
 
     // 回転方向の読み込み
     int coxa_dir_temp, femur_dir_temp, tibia_dir_temp;
@@ -82,7 +83,7 @@ SingleLegController::~SingleLegController() {
         delete dxl_controller_;
     }
 }
-
+//initialize()による初期化処理（ハード面の初期化処理）
 bool SingleLegController::initialize() {
     if (!dxl_controller_->initialize()) {
         ROS_ERROR("Failed to initialize Dynamixel controller");
@@ -100,33 +101,44 @@ bool SingleLegController::initialize() {
     return true;
 }
 
+//--------------------------<検証系の関数>--------------------------
+
+//角度の範囲が、(-π~+π)なのか確認用関数
 bool SingleLegController::validateAngle(double angle) {
+    //angleが-π~+πの範囲内であればtrue(1),範囲外であれば、false(0)が戻り値が返る。
     return angle >= -M_PI && angle <= M_PI;
 }
 
+//角度の範囲が-π~+πの範囲外である場合、範囲を内に角度の値を整える関数
 void SingleLegController::normalizeAngle(double& angle) {
-    angle = fmod(angle + M_PI, 2.0 * M_PI);
-    if (angle < 0) angle += 2.0 * M_PI;
-    angle -= M_PI;
+    //角度の範囲が-π~+πの範囲外である時に実行
+    if(!validateAngle(angle)){
+       //angleにπ足して、範囲を-π~+πから0~2πに変更する。それを2πで割り、余りを求める。 
+       angle = fmod(angle + M_PI, 2.0 * M_PI);
+       //余りからπ引けば、範囲内に変換できる。ただし、余りが負の値の時引くのではなく足す必要があるため、2π足すことで実質余りにπを足している。
+       if (angle < 0) angle += 2.0 * M_PI;
+       angle -= M_PI;
+       ROS_INFO("Angle convrted");
+    }
 }
 
-uint32_t SingleLegController::angleToPosition(double angle, uint32_t offset, int direction) {
+//--------------------------<変換系の関数>--------------------------
+
+//angleをdynamixelが対応している角度値に変更
+uint32_t SingleLegController::angleToPosition(double angle, int32_t offset, int direction) {
     // 角度を-πからπの範囲に正規化
     normalizeAngle(angle);
-    
     // 回転方向を考慮して角度を変換
     angle *= direction;
-    
     // 角度を位置値に変換してオフセットを適用
-    uint32_t position = static_cast<uint32_t>((angle + M_PI) * 2048.0 / M_PI) + offset;
-    
+    int32_t cal_position = static_cast<int32_t>((angle + M_PI) * 2048.0 / M_PI) + offset;
     // 0-4095の範囲に正規化
-    position = ((position % 4096) + 4096) % 4096;
-    
+    uint32_t position = static_cast<int32_t>(((cal_position % 4096) + 4096) % 4096);
+    //ROS_INFO("angleToPosition() : Angle Converted %f to %d",angle,position);
     return position;
 }
 
-double SingleLegController::positionToAngle(uint32_t position, uint32_t offset, int direction) {
+double SingleLegController::positionToAngle(uint32_t position, int32_t offset, int direction) {
     // オフセットを考慮した位置値を0-4095の範囲に正規化
     int32_t normalized_position = static_cast<int32_t>(position - offset);
     
@@ -138,10 +150,20 @@ double SingleLegController::positionToAngle(uint32_t position, uint32_t offset, 
     
     // 回転方向を考慮
     angle *= direction;
-    
+    //ROS_INFO("positionToAngle() : Angle Converted %d to %f",position,angle);
     return angle;
 }
 
+int32_t SingleLegController::degToPosition(double angle){
+	int32_t position = static_cast<int32_t>((angle) * 2048.0 / 180.0);
+	ROS_INFO("degToPosition() : Angle Converted %f to %d",angle,position);
+	return position;
+}
+
+//void SinglelegController::displayValue(double dou_var , uint32_t uint_var){}
+
+//--------------------------<Callback関数>--------------------------
+//FK
 void SingleLegController::commandCallback(
     const single_leg_controller::LegCommand::ConstPtr& msg) {
     
@@ -197,6 +219,8 @@ void SingleLegController::commandCallback(
     }
 }
 
+//IK
+
 void SingleLegController::positionCommandCallback(
     const single_leg_controller::LegPosition::ConstPtr& msg) {
     
@@ -224,21 +248,42 @@ void SingleLegController::positionCommandCallback(
         ROS_ERROR("Inverse kinematics calculation failed");
     }
 }
+
+//--------------------------<計算系の関数>--------------------------
+//IK
 bool SingleLegController::calculateInverseKinematics(
     double x, double y, double z,
     double& coxa_angle, double& femur_angle, double& tibia_angle) {
-    
     const double EPSILON = 1e-6;  // 数値計算の誤差許容範囲
+    
+    //debug用変数
+    double cal_value[9] = {};
+
 
     // Step 1: coxa角度の計算
     coxa_angle = atan2(y, x);
     
+    ROS_INFO("coxa_angle = atan2(y, x) = atan2(%f, %f) ",y,x);
+    ROS_INFO("coxa_angle = %f rad",coxa_angle);
     // Step 2: coxaジョイントからの水平距離を計算
     double L = sqrt(x*x + y*y) - coxa_length_;
     // z座標はそのまま使用
     
+    cal_value[0] = x*x;
+    cal_value[1] = y*y;
+    cal_value[2] = sqrt(x*x + y*y);
+    ROS_INFO(" L = sqrt(x*x + y*y) - coxa_length_");
+    ROS_INFO(" L = sqrt(%f + %f) - %f",cal_value[0],cal_value[1],coxa_length_);
+    ROS_INFO("L = %f - %f",cal_value[2],coxa_length_);
+    ROS_INFO("L = %f",L);
     // Step 3: femur-tibia平面での2リンク問題を解く
     double L2 = sqrt(L*L + z*z);  // 目標点までの距離
+    cal_value[3] = L*L; 
+    cal_value[4] = z*z; 
+    cal_value[5] = sqrt(L*L + z*z); 
+    ROS_INFO("L2 = sqrt(L*L + z*z)");
+    ROS_INFO("L2 = sqrt(%f + %f)",cal_value[3],cal_value[4]);
+    ROS_INFO("L2 = %f",L2);
     
     // 到達可能性チェック
     if (L2 > (femur_length_ + tibia_length_ - EPSILON)) {
@@ -258,6 +303,13 @@ bool SingleLegController::calculateInverseKinematics(
                        - tibia_length_*tibia_length_) /
                       (2.0 * femur_length_ * tibia_length_);
                       
+    cal_value[6] = L2*L2;
+    cal_value[7] = femur_length_*femur_length_;
+    cal_value[8] = tibia_length_*tibia_length_;
+    ROS_INFO("cos_tibia = (L2*L2 - femur_length_*femur_length_ - tibia_length_*tibia_length_) /(2.0 * femur_length_ * tibia_length_");
+    ROS_INFO("cos_tibia = (%f - %f - %f) /(2.0 * %f * %f)",cal_value[6],cal_value[7],cal_value[8],femur_length_,tibia_length_); 
+    ROS_INFO("cos_tibia = %f",cos_tibia);
+                 
     // 数値誤差の処理
     if (cos_tibia > 1.0 - EPSILON) {
         tibia_angle = 0.0;
@@ -267,17 +319,26 @@ bool SingleLegController::calculateInverseKinematics(
         tibia_angle = acos(cos_tibia);
     }
     
-    // elbow-down設定の場合は符号を反転
-    // bool use_elbow_up = true;  // 設定によって変更可能
-    // if (!use_elbow_up) {
-    //     tibia_angle = -tibia_angle;
-    // }
+    ROS_INFO("tibia_angle = :%f rad",tibia_angle);
+    
+    //elbow-down設定の場合は符号を反転
+    tibia_angle = -tibia_angle;
+    ROS_INFO("tibia_angle = %f rad",tibia_angle);
+    //bool use_elbow_up = true;  // 設定によって変更可能
+    //if (!use_elbow_up) {
+    //   tibia_angle = -tibia_angle;
+    //}
     
     // Step 5: femur角度を計算
     double gamma = atan2(z, L);  // 目標点の仰角
     double alpha = atan2(tibia_length_ * sin(tibia_angle),
                         femur_length_ + tibia_length_ * cos(tibia_angle));
-    femur_angle = gamma + alpha;
+    femur_angle = gamma - alpha;
+                      
+    ROS_INFO("gamma = atan2(z, L) = atan2(%f, %f)",z,L);
+    ROS_INFO("gamma = %f rad",gamma);
+    ROS_INFO("alpha = %f rad",alpha);
+    ROS_INFO("femur_angle = %f rad",femur_angle);
     
     // Step 6: 関節角度の範囲チェック
     if (!validateAngle(coxa_angle) || 
@@ -335,7 +396,7 @@ bool SingleLegController::calculateForwardKinematics(
     
     return true;
 }
-
+//--------------------------<計算結果確認用関数>--------------------------
 bool SingleLegController::validateParameters() {
     // 位置制限値のチェック
     if (control_params_.position_min >= control_params_.position_max) {
@@ -382,6 +443,8 @@ bool SingleLegController::isWithinLimits(uint32_t position, uint32_t velocity) {
 
     return true;
 }
+
+//--------------------------<ループ処理（角度の読み取り）>--------------------------
 
 void SingleLegController::run() {
     ros::Rate rate(control_params_.update_rate);
