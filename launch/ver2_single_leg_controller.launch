@@ -1,0 +1,28 @@
+<launch>
+  <!-- パラメータファイルの読み込み -->
+  <rosparam command="load" file="$(find single_leg_controller)/config/hexa_leg_params.yaml" />
+  
+  <!-- 各脚のコントローラーを起動 -->
+  <!-- 右側の脚 -->
+  <node name="leg_controller_RF" pkg="single_leg_controller" type="single_leg_controller_node" 
+        args="RF" output="screen">
+  </node>
+  <node name="leg_controller_RM" pkg="single_leg_controller" type="single_leg_controller_node" 
+        args="RM" output="screen">
+  </node>
+  <node name="leg_controller_RR" pkg="single_leg_controller" type="single_leg_controller_node" 
+        args="RR" output="screen">
+  </node>
+  
+  <!-- 左側の脚 -->
+  <node name="leg_controller_LF" pkg="single_leg_controller" type="single_leg_controller_node" 
+        args="LF" output="screen">
+  </node>
+  <node name="leg_controller_LM" pkg="single_leg_controller" type="single_leg_controller_node" 
+        args="LM" output="screen">
+  </node>
+  <node name="leg_controller_LR" pkg="single_leg_controller" type="single_leg_controller_node" 
+        args="LR" output="screen">
+  </node>
+  
+</launch>

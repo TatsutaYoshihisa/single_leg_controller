@@ -1,0 +1,78 @@
+# 六脚ロボットのパラメータ設定
+
+# Dynamixelの基本設定
+dynamixel:
+  device_name: "/dev/ttyUSB0"
+  baud_rate: 57600  
+  protocol_version: 2.0
+  
+  # 各脚のモーターID [coxa, femur, tibia]
+  motor_ids:
+    RF: [1, 2, 3]     # 右前脚
+    RM: [4, 5, 6]     # 右中脚
+    RR: [7, 8, 9]     # 右後脚
+    LF: [10, 11, 12]  # 左前脚
+    LM: [13, 14, 15]  # 左中脚
+    LR: [16, 17, 18]  # 左後脚
+
+# 制御パラメータ（全脚共通）
+control:
+  position_limit:
+    max: 4095
+    min: 0
+  velocity_limit: 1023
+  update_rate: 50.0   # Hz
+
+# リンクパラメータ（全脚共通）
+leg_geometry:
+  coxa_length: 25.0    # mm
+  femur_length: 105.0  # mm
+  tibia_length: 105.0  # mm
+
+# ゼロ点オフセット（全脚共通）
+joint_zero_position:
+  coxa_offset: 90.0    # degrees
+  femur_offset: 90.0   # degrees
+  tibia_offset: 0.0   # degrees
+
+# 回転方向設定（全脚共通）
+joint_direction:
+  coxa_direction: 1
+  femur_direction: 1
+  tibia_direction: -1
+
+# # 脚ごとのデフォルト位置（ロボット座標系）
+# default_positions:
+#   RF:  # 右前脚
+#     x: 150.0
+#     y: -150.0
+#     z: -120.0
+#   RM:  # 右中脚
+#     x: 0.0
+#     y: -200.0
+#     z: -120.0
+#   RR:  # 右後脚
+#     x: -150.0
+#     y: -150.0
+#     z: -120.0
+#   LF:  # 左前脚
+#     x: 150.0
+#     y: 150.0
+#     z: -120.0
+#   LM:  # 左中脚
+#     x: 0.0
+#     y: 200.0
+#     z: -120.0
+#   LR:  # 左後脚
+#     x: -150.0
+#     y: 150.0
+#     z: -120.0
+
+# # 脚の作業領域制限
+# workspace_limits:
+#   x_min: -200.0  # mm
+#   x_max: 200.0   # mm
+#   y_min: -200.0  # mm
+#   y_max: 200.0   # mm
+#   z_min: -200.0  # mm
+#   z_max: 0.0     # mm
