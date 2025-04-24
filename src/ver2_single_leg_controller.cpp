@@ -2,21 +2,21 @@
 #include <boost/make_shared.hpp>
 
 //コンストラクタ（初期化処理）- 脚IDを追加
-SingleLegController::SingleLegController(const std::string& leg_id) : nh_("~"), leg_id_(leg_id) {
+SingleLegController::SingleLegController(const std::string& leg_id) : nh_(""),pnh_("~"),leg_id_(leg_id) {
     ROS_INFO("[%s] Initializing leg controller", leg_id_.c_str());
     
     // Dynamixelの基本設定を読み込み
-    std::string device_param = "dynamixel/devices/" + leg_id_;
+    std::string device_param = "/dynamixel/devices/" + leg_id_;
     if (!nh_.getParam(device_param, device_name_)) {
         ROS_ERROR("[%s] Failed to get device_name from parameter server", leg_id_.c_str());
         return;
     }
-    nh_.param<int>("dynamixel/baud_rate", baud_rate_, 57600);
-    nh_.param<int>("dynamixel/protocol_version", protocol_version_, 2);
+    nh_.param<int>("/dynamixel/baud_rate", baud_rate_, 57600);
+    nh_.param<int>("/dynamixel/protocol_version", protocol_version_, 2);
 
     // モーターIDの読み込み
     std::vector<int> motor_ids;
-    std::string motor_param = "dynamixel/motor_ids/" + leg_id_;
+    std::string motor_param = "/dynamixel/motor_ids/" + leg_id_;
     if (!nh_.getParam(motor_param, motor_ids)) {
         ROS_ERROR("[%s] Failed to get motor IDs from parameter server", leg_id_.c_str());
         return;
@@ -34,25 +34,25 @@ SingleLegController::SingleLegController(const std::string& leg_id) : nh_("~"), 
 
     // 制御パラメータの読み込み
     int position_max_temp, position_min_temp, velocity_limit_temp;
-    nh_.param("control/position_limit/max", position_max_temp, 4095);
-    nh_.param("control/position_limit/min", position_min_temp, 0);
-    nh_.param("control/velocity_limit", velocity_limit_temp, 1023);
+    nh_.param("/control/position_limit/max", position_max_temp, 4095);
+    nh_.param("/control/position_limit/min", position_min_temp, 0);
+    nh_.param("/control/velocity_limit", velocity_limit_temp, 1023);
     control_params_.position_max = static_cast<uint32_t>(position_max_temp);
     control_params_.position_min = static_cast<uint32_t>(position_min_temp);
     control_params_.velocity_limit = static_cast<uint32_t>(velocity_limit_temp);
     
-    nh_.param<double>("control/update_rate", control_params_.update_rate, 50.0);
+    nh_.param<double>("/control/update_rate", control_params_.update_rate, 50.0);
 
     // リンクパラメータの読み込み
-    nh_.param<double>("leg_geometry/coxa_length", coxa_length_, 25.0);
-    nh_.param<double>("leg_geometry/femur_length", femur_length_, 105.0);
-    nh_.param<double>("leg_geometry/tibia_length", tibia_length_, 105.0);
+    nh_.param<double>("/leg_geometry/coxa_length", coxa_length_, 25.0);
+    nh_.param<double>("/leg_geometry/femur_length", femur_length_, 105.0);
+    nh_.param<double>("/leg_geometry/tibia_length", tibia_length_, 105.0);
 
     // ゼロ点オフセットの読み込み
     double coxa_offset_temp, femur_offset_temp, tibia_offset_temp;
-    nh_.param("joint_zero_position/coxa_offset", coxa_offset_temp, 0.0);
-    nh_.param("joint_zero_position/femur_offset", femur_offset_temp, 0.0);
-    nh_.param("joint_zero_position/tibia_offset", tibia_offset_temp, 0.0);
+    nh_.param("/joint_zero_position/coxa_offset", coxa_offset_temp, 0.0);
+    nh_.param("/joint_zero_position/femur_offset", femur_offset_temp, 0.0);
+    nh_.param("/joint_zero_position/tibia_offset", tibia_offset_temp, 0.0);
     
     zero_positions_.coxa_offset = degToPosition(coxa_offset_temp);
     zero_positions_.femur_offset = degToPosition(femur_offset_temp);
@@ -60,9 +60,9 @@ SingleLegController::SingleLegController(const std::string& leg_id) : nh_("~"), 
 
     // 回転方向の読み込み
     int coxa_dir_temp, femur_dir_temp, tibia_dir_temp;
-    nh_.param("joint_direction/coxa_direction", coxa_dir_temp, 1);
-    nh_.param("joint_direction/femur_direction", femur_dir_temp, 1);
-    nh_.param("joint_direction/tibia_direction", tibia_dir_temp, 1);
+    nh_.param("/joint_direction/coxa_direction", coxa_dir_temp, 1);
+    nh_.param("/joint_direction/femur_direction", femur_dir_temp, 1);
+    nh_.param("/joint_direction/tibia_direction", tibia_dir_temp, 1);
     
     joint_directions_.coxa_direction = coxa_dir_temp;
     joint_directions_.femur_direction = femur_dir_temp;

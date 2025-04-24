@@ -13,6 +13,7 @@ class SingleLegController {
 private:
     // ROSインターフェース
     ros::NodeHandle nh_;
+    ros::NodeHandle pnh_;
     ros::Subscriber cmd_sub_;
     ros::Publisher state_pub_;
     ros::Publisher fk_pos_pub_;
