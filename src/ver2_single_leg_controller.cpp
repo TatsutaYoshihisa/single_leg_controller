@@ -6,7 +6,11 @@ SingleLegController::SingleLegController(const std::string& leg_id) : nh_("~"), 
     ROS_INFO("[%s] Initializing leg controller", leg_id_.c_str());
     
     // Dynamixelの基本設定を読み込み
-    nh_.param<std::string>("dynamixel/device_name", device_name_, "/dev/ttyUSB0");
+    std::string device_param = "dynamixel/devices/" + leg_id_;
+    if (!nh_.getParam(device_param, device_name_)) {
+        ROS_ERROR("[%s] Failed to get device_name from parameter server", leg_id_.c_str());
+        return;
+    }
     nh_.param<int>("dynamixel/baud_rate", baud_rate_, 57600);
     nh_.param<int>("dynamixel/protocol_version", protocol_version_, 2);
 
@@ -478,15 +482,15 @@ void SingleLegController::run() {
 
 // メイン関数 - 脚IDを受け取るように変更
 int main(int argc, char** argv) {
+
+    std::string leg_id = ""; 
     // 引数のチェック（脚IDの取得）
-    std::string leg_id = "RF"; // デフォルト値
     if (argc > 1) {
         leg_id = argv[1];
     }
-    
     // ROSの初期化（ノード名には脚IDを含める）
     ros::init(argc, argv, "leg_controller_" + leg_id);
-    
+
     // 脚コントローラーの作成
     SingleLegController controller(leg_id);
     if (!controller.initialize()) {

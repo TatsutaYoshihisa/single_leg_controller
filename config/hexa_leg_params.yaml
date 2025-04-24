@@ -2,9 +2,18 @@
 
 # Dynamixelの基本設定
 dynamixel:
-  device_name: "/dev/ttyUSB0"
   baud_rate: 57600  
   protocol_version: 2.0
+
+  #USBデバイスの識別用ID
+  devices:
+    RF: "/dev/ttyUSB0"  # 右前脚用デバイス
+    RM: "/dev/ttyUSB1"  # 右中脚用デバイス
+    RR: "/dev/ttyUSB2"  # 右後脚用デバイス
+    LF: "/dev/ttyUSB0"  # 左前脚用デバイス
+    LM: "/dev/ttyUSB1"  # 左中脚用デバイス
+    LR: "/dev/ttyUSB2"  # 左後脚用デバイス
+
   
   # 各脚のモーターID [coxa, femur, tibia]
   motor_ids:
